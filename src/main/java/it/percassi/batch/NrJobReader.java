@@ -2,9 +2,14 @@ package it.percassi.batch;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.NonTransientResourceException;
 import org.springframework.batch.item.ParseException;
@@ -21,9 +26,13 @@ import it.percassi.batch.nrelic.service.NewRelicServiceResponse;
 import it.percassi.batch.nrelic.service.NrMetricService;
 import it.percassi.utils.PerPortalConstants;
 
+@StepScope
 @Component
 public class NrJobReader implements ItemReader<List<NewRelicResponse>> {
 
+
+	private static final Logger LOG = LoggerFactory.getLogger(NrJobReader.class);
+	
 	@Autowired
 	@Qualifier("nrMetricService")
 	private NrMetricService nrMetricService;
@@ -31,26 +40,32 @@ public class NrJobReader implements ItemReader<List<NewRelicResponse>> {
 	private String beId;
 	@Value("${nr.fe.id}")
 	private String feId;
-	
-	
-	@Override
-	public List<NewRelicResponse> read()
-			throws UnexpectedInputException, ParseException, NonTransientResourceException, RestClientException, IOException {
-		
-		
-		final List<NewRelicResponse> nrResponses = Collections.emptyList();
-		final LocalDateTime now = LocalDateTime.now();
-		final LocalDateTime fromDate = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(),0,0);
-		final LocalDateTime toDate = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(),23,59);
 
-		//TODO Call nr for all metrics needed
-		final NewRelicServiceRequest serviceRequest = new NewRelicServiceRequest(fromDate, toDate, "HttpDispatcher", 0,
-				true, PerPortalConstants.NEW_RELIC_CALL_COUNT_VALUE, Integer.valueOf(this.feId));
-		final NewRelicServiceResponse serviceResponse = this.nrMetricService.getNrMetric(serviceRequest);
-		if (serviceResponse != null) {			
-			nrResponses.add(serviceResponse.getNewRelicResponse());
+
+	@Override
+	public List<NewRelicResponse> read() throws UnexpectedInputException, ParseException, NonTransientResourceException,
+			RestClientException, IOException {
+
+		final List<NewRelicResponse> nrResponses = new ArrayList<>();
+		final LocalDateTime now = LocalDateTime.now();
+		final LocalDateTime fromDate = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 0, 0);
+		final LocalDateTime toDate = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 23, 59);
+
+		for (String metric : PerPortalConstants.NR_METRICS) {
+
+			for (String value : PerPortalConstants.NR_VALUES) {
+
+				final NewRelicServiceRequest serviceRequest = new NewRelicServiceRequest(fromDate, toDate, metric, 0,
+						true, value, Integer.valueOf(this.feId));
+				final NewRelicServiceResponse serviceResponse = this.nrMetricService.getNrMetric(serviceRequest);
+				LOG.info("NR response:{} ", serviceResponse.getNewRelicResponse().toString());
+				if (serviceResponse != null && serviceResponse.getNewRelicResponse() != null) {
+					
+					nrResponses.add(serviceResponse.getNewRelicResponse());
+				}
+			}
 		}
+		
 		return nrResponses;
 	}
-
 }

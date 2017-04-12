@@ -68,17 +68,17 @@ public class NrMetricServiceImpl implements NrMetricService {
 		ResponseEntity<String> res = restTemplate.exchange(uri, HttpMethod.GET, newRelicEntity, String.class);
 
 		if (Objects.isNull(res)) {
-			LOG.warn("Response received : {} ", res.toString());
+			LOG.warn("Response received is null,called this uri {}",ReflectionToStringBuilder.toString(uri, ToStringStyle.MULTI_LINE_STYLE));
 			response = new NewRelicServiceResponse(new NewRelicResponse());
 			response.setMessage(PerPortalConstants.API_CALL_EMPTY_RESPONSE);
 			response.setStatusCode(PerPortalConstants.API_CALL_KO);
 			return response;
 		}
-		LOG.info("Response received : {} with status {} ", res.getBody().toString(),res.getStatusCode());
 		NewRelicResponse nrObj = om.readValue(res.getBody(), NewRelicResponse.class);
 		response = new NewRelicServiceResponse(nrObj);
 		response.setStatusCode(res.getStatusCodeValue());
 		response.setMessage(PerPortalConstants.API_CALL_OK);
+		LOG.info("Response received: {} ",ReflectionToStringBuilder.toString(response, ToStringStyle.MULTI_LINE_STYLE));
 		return response;
 
 	}

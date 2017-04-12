@@ -14,7 +14,6 @@ import org.springframework.batch.core.JobParametersInvalidException;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.launch.support.SimpleJobLauncher;
 import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
@@ -29,7 +28,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
-import it.percassi.batch.NewRelicMongoItem;
 import it.percassi.batch.NrJobListener;
 import it.percassi.batch.NrJobReader;
 import it.percassi.batch.NrJobWriter;
@@ -58,20 +56,21 @@ public class BatchConfig implements SchedulingConfigurer {
 	@Autowired
 	private NrJobWriter nrJobWriter;
 	
+	
 
 	@Override
 	public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
 		taskRegistrar.setScheduler(taskExecutor());
 	}
 
-	@StepScope
+	
 	@Bean(destroyMethod = "shutdown")
 	public Executor taskExecutor() {
 		return Executors.newScheduledThreadPool(10);
 	}
 
-	@StepScope
-	@Scheduled(cron="${cron.job.expression}")
+//	@Scheduled(cron="${cron.job.expression}")
+	@Scheduled(fixedRate=120000)
 	public void launchJob() {
 
 		JobParameters param = new JobParametersBuilder()
@@ -90,23 +89,26 @@ public class BatchConfig implements SchedulingConfigurer {
 	}
 
 	@Bean
-	@StepScope
 	public Job callNrJob() {
-		return jobBuilderFactory.get("callNrJob").incrementer(new RunIdIncrementer()).listener(listener())
-				.flow(callNrServiceStep()).end().build();
+		return jobBuilderFactory.get("callNrJob")
+				.incrementer(new RunIdIncrementer())
+				.listener(listener())
+				.flow(callNrServiceStep())
+				.end()
+				.build();
 	}
 
 	@Bean
-	@StepScope
 	public Step callNrServiceStep() {
 		return stepBuilderFactory.get("callNrServiceStep")
-				.<List<NewRelicResponse>, List<NewRelicMongoItem>>chunk(1)
+				.<List<NewRelicResponse>, String>chunk(1)
 				.reader(nrJobReader)
 				.processor(processor())
 				.writer(nrJobWriter)
 				.build();
 	}
 
+	@Bean
 	private NrResponseProcessor processor() {
 		return new NrResponseProcessor();
 	}
