@@ -12,9 +12,7 @@ public class NrJobListener implements JobExecutionListener {
 	@Override
 	public void afterJob(JobExecution jobExecution) {
 
-		LOG.info("Starting Job {} at {}", 
-				jobExecution.getId(),
-				jobExecution.getStartTime());
+		LOG.info("Starting Job {} at {}", jobExecution.getId(),jobExecution.getStartTime());
 	}
 
 	@Override

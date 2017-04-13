@@ -52,7 +52,7 @@ public class NrMetricServiceImpl implements NrMetricService {
 			throws RestClientException, IOException {
 		LOG.info("Incoming request: {} ", request.toString());
 		final MultiValueMap<String, String> uriParams = new LinkedMultiValueMap<String, String>();
-		final ObjectMapper om = new ObjectMapper();
+		final ObjectMapper objectMapper = new ObjectMapper();
 		NewRelicServiceResponse response = null;
 
 		uriParams.put(PerPortalConstants.NEW_RELIC_NAMES, Arrays.asList(request.getMetricName()));
@@ -74,7 +74,7 @@ public class NrMetricServiceImpl implements NrMetricService {
 			response.setStatusCode(PerPortalConstants.API_CALL_KO);
 			return response;
 		}
-		NewRelicResponse nrObj = om.readValue(res.getBody(), NewRelicResponse.class);
+		NewRelicResponse nrObj = objectMapper.readValue(res.getBody(), NewRelicResponse.class);
 		response = new NewRelicServiceResponse(nrObj);
 		response.setStatusCode(res.getStatusCodeValue());
 		response.setMessage(PerPortalConstants.API_CALL_OK);
