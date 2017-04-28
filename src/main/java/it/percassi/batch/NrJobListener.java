@@ -12,16 +12,14 @@ public class NrJobListener implements JobExecutionListener {
 	@Override
 	public void afterJob(JobExecution jobExecution) {
 
-		LOG.info("Starting Job {} at {}", jobExecution.getId(),jobExecution.getStartTime());
+		LOG.info("Job {} terminated with status {} ,started at {} stopped at {}", jobExecution.getId(),
+				jobExecution.getExitStatus(), jobExecution.getStartTime(), jobExecution.getEndTime());
 	}
 
 	@Override
 	public void beforeJob(JobExecution jobExecution) {
-		LOG.info("Job {} terminated with status {} ,started at {} stopped at {}", 
-				jobExecution.getId(),
-				jobExecution.getExitStatus(),
-				jobExecution.getStartTime(),
-				jobExecution.getEndTime());
+		LOG.info("Starting Job {} at {}", jobExecution.getId(), jobExecution.getStartTime());
+
 	}
 
 }

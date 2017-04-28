@@ -1,38 +1,28 @@
 package it.percassi.batch;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.item.ItemProcessor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import it.percassi.batch.nrelic.NewRelicResponseListBean;
 import it.percassi.batch.nrelic.model.NewRelicResponse;
 import it.percassi.batch.nrelic.model.Values;
 import it.percassi.utils.PerPortalConstants;
 
-public class NrResponseProcessor implements ItemProcessor<NewRelicResponseListBean, String> {
+public class NrResponseProcessor implements ItemProcessor<NewRelicResponse, String> {
 
-//	private static final Logger LOG = LoggerFactory.getLogger(NrJobReader.class);
+	private static final Logger LOG = LoggerFactory.getLogger(NrJobReader.class);
 
 	@Override
-	public String process(NewRelicResponseListBean itemsToConvert) throws Exception {
+	public String process(NewRelicResponse item) throws Exception {
 		
 		final StringBuilder stringBuilder = new StringBuilder();
 		final ObjectMapper objectMapper = new ObjectMapper();
-		List<NewRelicResponse> items =null;
 		LocalDate day = null;
 		
-		if (itemsToConvert != null && itemsToConvert.getNewRelicResponselistBean().size() > 0) {
-			items = itemsToConvert.getNewRelicResponselistBean();
-			LocalDateTime localDate = items.get(0).getMetricData().getTo();
-			day = LocalDate.of(localDate.getYear(), localDate.getMonthValue(), localDate.getDayOfMonth());
-		}
-
-		for (NewRelicResponse item : items) {
-
 			Values values = item.getMetricData().getMetrics().get(0).getTimeslices().get(0).getValues();
 
 			NewRelicMongoItem newRelicMongoItem = new NewRelicMongoItem();
@@ -47,10 +37,10 @@ public class NrResponseProcessor implements ItemProcessor<NewRelicResponseListBe
 			newRelicMongoItem.setValueName(valueName);
 			newRelicMongoItem.setValue(summarizeValue);
 
-			// nrItemsToSave.add(newRelicMongoItem);
 			stringBuilder.append(objectMapper.writeValueAsString(newRelicMongoItem));
+			LOG.info("newRelicMongoItem: "+newRelicMongoItem);
 
-		}
+//		}
 		return stringBuilder.toString();
 
 	}

@@ -1,14 +1,14 @@
 package it.percassi.batch.config;
 
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.launch.support.SimpleJobLauncher;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean;
 import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-@EnableBatchProcessing
 @Configuration
 public class BatchScheduler {
 
@@ -16,7 +16,15 @@ public class BatchScheduler {
 	public ResourcelessTransactionManager transactionManager() {
 		return new ResourcelessTransactionManager();
 	}
-
+	
+	@Bean
+	public TaskExecutor taskExecutor(){
+		ThreadPoolTaskExecutor taskExecutor= new ThreadPoolTaskExecutor();
+		taskExecutor.setMaxPoolSize(10);
+		taskExecutor.setCorePoolSize(5);
+		taskExecutor.afterPropertiesSet();
+		return taskExecutor;
+	}
 	@Bean
 	public MapJobRepositoryFactoryBean mapJobRepositoryFactory(ResourcelessTransactionManager txManager)
 			throws Exception {

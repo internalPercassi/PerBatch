@@ -3,12 +3,14 @@ package it.percassi.batch.nrelic.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 
 import it.percassi.utils.CustomeLocalDateTimeDeserializer;
-
 
 public class MetricsData {
 
@@ -64,5 +66,11 @@ public class MetricsData {
 
 	public void setMetrics(List<Metrics> metrics) {
 		this.metrics = metrics;
+	}
+
+	@Override
+	public String toString() {
+
+		return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
 	}
 }
