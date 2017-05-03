@@ -66,10 +66,8 @@ public class BatchConfig {
 	@Value("${nr.be.id}")
 	private String beId;
 
-	private boolean firstTime = true;
 
-	// @Scheduled(cron="${cron.job.expression}")
-	@Scheduled(fixedRate = 30000)
+	@Scheduled(cron="${cron.job.expression}")
 	public void launchJob() {
 
 		LocalDate now = LocalDate.now();
@@ -82,7 +80,6 @@ public class BatchConfig {
 
 		try {
 			
-			if (!firstTime) {
 
 				jobLauncher.run(callNrDailyJob(), param);
 
@@ -93,8 +90,7 @@ public class BatchConfig {
 							.toJobParameters();
 					jobLauncher.run(callNrMonthly(), param);
 				}
-			}
-			firstTime=false;
+
 		} catch (JobExecutionAlreadyRunningException | JobRestartException | JobInstanceAlreadyCompleteException
 				| JobParametersInvalidException e) {
 			LOG.error("Job Exeception: {}", e);
