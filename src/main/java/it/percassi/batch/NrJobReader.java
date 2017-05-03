@@ -24,16 +24,12 @@ public class NrJobReader implements ItemReader<NewRelicResponse> {
 	@Autowired
 	@Qualifier("nrMetricService")
 	public NrMetricService service;
-	//
-	// @Value("${nr.fe.id}")
-	// private String feId;
-	//
-	// @Value("${nr.be.id}")
-	// private String beId;
 
 	private String metricName;
 	private String metricValue;
 	private String serverId;
+	private boolean isMonthlyCall;
+
 
 	public String getMetricName() {
 		return metricName;
@@ -58,6 +54,10 @@ public class NrJobReader implements ItemReader<NewRelicResponse> {
 	public void setMetricValue(String metricValue) {
 		this.metricValue = metricValue;
 	}
+	
+	public boolean isMonthlyCall() {
+		return isMonthlyCall;
+	}
 
 	private boolean  isCallWsFinished = false;
 	NewRelicResponse nrResponse = null;
@@ -70,10 +70,11 @@ public class NrJobReader implements ItemReader<NewRelicResponse> {
 
 
 
-	public NrJobReader(String metricName, String metricValue, String serverId) {
+	public NrJobReader(String metricName, String metricValue, String serverId,boolean isMonthlyCall) {
 		this.metricName=metricName;
 		this.metricValue=metricValue;
 		this.serverId=serverId;
+		this.isMonthlyCall=isMonthlyCall;
 	}
 
 	@Override
@@ -81,12 +82,16 @@ public class NrJobReader implements ItemReader<NewRelicResponse> {
 			RestClientException, IOException {
 		if (!isCallWsFinished) {
 
-			final LocalDateTime now = LocalDateTime.now();
-			final LocalDateTime fromDate = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 0, 0);
-			final LocalDateTime toDate = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 23, 59);
-
+			LocalDateTime fromDate=LocalDateTime.now().minusDays(1).toLocalDate().atStartOfDay();
+			LocalDateTime toDate=LocalDateTime.now().toLocalDate().atStartOfDay().minusSeconds(1);
+			
+			if(isMonthlyCall){
+				fromDate=LocalDateTime.now().minusMonths(1).withDayOfMonth(1).toLocalDate().atStartOfDay();
+				toDate=LocalDateTime.now().withDayOfMonth(1).toLocalDate().atStartOfDay().minusSeconds(1);				
+			}
+		
 			final NewRelicServiceRequest serviceRequest = new NewRelicServiceRequest(fromDate, toDate, metricName, 0,
-					true, metricValue, Integer.parseInt(serverId));
+					true, metricValue, Integer.valueOf(serverId));
 			final NewRelicServiceResponse serviceResponse = service.getNrMetric(serviceRequest);
 			if (serviceResponse != null) {
 				LOG.info("NR response:{} ", serviceResponse.getNewRelicResponse().toString());

@@ -13,7 +13,7 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
-@ComponentScan(basePackages="it.percassi.batch")
+@ComponentScan(basePackages="it.percassi")
 @PropertySource("classpath:app.properties")
 public class AppConfig {
 

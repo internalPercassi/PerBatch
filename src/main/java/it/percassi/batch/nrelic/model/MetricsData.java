@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 
-import it.percassi.utils.CustomeLocalDateTimeDeserializer;
+import it.percassi.batch.nrelic.CustomeLocalDateTimeDeserializer;
 
 public class MetricsData {
 

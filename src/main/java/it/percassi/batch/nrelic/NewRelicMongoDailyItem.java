@@ -1,14 +1,17 @@
-package it.percassi.batch;
+package it.percassi.batch.nrelic;
 
 import java.io.Serializable;
-import java.time.LocalDate;
+import java.util.Date;
 
-public class NewRelicMongoItem implements Serializable{
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
+public class NewRelicMongoDailyItem implements Serializable{
 
 	private static final long serialVersionUID = -4820815317741060556L;
 	
 	private String metricName;
-	private LocalDate day;
+	private Date day;
 	private float value;
 	private String valueName;
 
@@ -20,11 +23,11 @@ public class NewRelicMongoItem implements Serializable{
 		this.metricName = metricName;
 	}
 
-	public LocalDate getDay() {
+	public Date getDay() {
 		return day;
 	}
 
-	public void setDay(LocalDate day) {
+	public void setDay(Date day) {
 		this.day = day;
 	}
 
@@ -44,4 +47,8 @@ public class NewRelicMongoItem implements Serializable{
 		this.valueName = valueName;
 	}
 
+	@Override
+	public String toString() {
+		return ReflectionToStringBuilder.toString(this,ToStringStyle.SHORT_PREFIX_STYLE);
+	}
 }

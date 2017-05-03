@@ -2,6 +2,9 @@ package it.percassi.batch.nrelic.model;
 
 import java.util.List;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 public class Metrics {
 
 	private List<Timeslices> timeslices;
@@ -21,6 +24,11 @@ public class Metrics {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+	
+	@Override
+	public String toString() {
+		return ReflectionToStringBuilder.toString(this,ToStringStyle.MULTI_LINE_STYLE);
 	}
 
 }

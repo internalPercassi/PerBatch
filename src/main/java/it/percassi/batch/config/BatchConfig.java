@@ -1,5 +1,7 @@
 package it.percassi.batch.config;
 
+import java.time.LocalDate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.Job;
@@ -26,15 +28,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import it.percassi.batch.NrDailyProcessor;
+import it.percassi.batch.NrJobDailyWriter;
 import it.percassi.batch.NrJobListener;
+import it.percassi.batch.NrJobMonthlyWriter;
 import it.percassi.batch.NrJobReader;
-import it.percassi.batch.NrJobWriter;
-import it.percassi.batch.NrResponseProcessor;
+import it.percassi.batch.NrMonthProcessor;
+import it.percassi.batch.nrelic.NewRelicMongoDailyItem;
+import it.percassi.batch.nrelic.NewRelicMongoMonthlyItem;
 import it.percassi.batch.nrelic.model.NewRelicResponse;
 import it.percassi.utils.PerPortalConstants;
 
@@ -56,26 +60,41 @@ public class BatchConfig {
 	@Autowired
 	private StepBuilderFactory stepBuilderFactory;
 
-	
-	 @Value("${nr.fe.id}")
-	 private String feId;
-	
-	 @Value("${nr.be.id}")
-	 private String beId;
-	 	
- 
+	@Value("${nr.fe.id}")
+	private String feId;
 
-	//@Scheduled(cron="${cron.job.expression}")
-	@Scheduled(fixedRate = 1200000)
+	@Value("${nr.be.id}")
+	private String beId;
+
+	private boolean firstTime = true;
+
+	// @Scheduled(cron="${cron.job.expression}")
+	@Scheduled(fixedRate = 30000)
 	public void launchJob() {
 
-		JobParameters param = new JobParametersBuilder().addString("JobID", String.valueOf(System.currentTimeMillis()))
-				.toJobParameters();
+		LocalDate now = LocalDate.now();
+		int dayOfTheMonth = now.getDayOfMonth();
+
+		JobParameters param = new JobParametersBuilder()
+				.addString("DailyJobID", String.valueOf(System.currentTimeMillis())).toJobParameters();
 
 		LOG.info("Calling job with parameters {} ", param);
 
 		try {
-			jobLauncher.run(callNrJob(), param);
+			
+			if (!firstTime) {
+
+				jobLauncher.run(callNrDailyJob(), param);
+
+				if (dayOfTheMonth == 1) {
+
+					param = new JobParametersBuilder()
+							.addString("MonthlyJobID", String.valueOf(System.currentTimeMillis()))
+							.toJobParameters();
+					jobLauncher.run(callNrMonthly(), param);
+				}
+			}
+			firstTime=false;
 		} catch (JobExecutionAlreadyRunningException | JobRestartException | JobInstanceAlreadyCompleteException
 				| JobParametersInvalidException e) {
 			LOG.error("Job Exeception: {}", e);
@@ -83,20 +102,11 @@ public class BatchConfig {
 
 	}
 
-
 	@Bean
 	public ResourcelessTransactionManager transactionManager() {
 		return new ResourcelessTransactionManager();
 	}
-	
-//	@Bean
-//	public TaskExecutor taskExecutor(){
-//		ThreadPoolTaskExecutor taskExecutor= new ThreadPoolTaskExecutor();
-//		taskExecutor.setMaxPoolSize(10);
-//		taskExecutor.setCorePoolSize(5);
-//		taskExecutor.afterPropertiesSet();
-//		return taskExecutor;
-//	}
+
 	@Bean
 	public MapJobRepositoryFactoryBean mapJobRepositoryFactory(ResourcelessTransactionManager txManager)
 			throws Exception {
@@ -119,89 +129,140 @@ public class BatchConfig {
 		launcher.setJobRepository(jobRepository);
 		return launcher;
 	}
+
 	@Bean
-	public Job callNrJob() {
-		return jobBuilderFactory.get("callNrJob")
-				.incrementer(new RunIdIncrementer())
-				.listener(jobListener())
-				.start(step1())
-				.next(step2())
-				.next(step3())
-				.next(step4())
-				.build();
+	public Job callNrDailyJob() {
+		return jobBuilderFactory.get("dailyJob").incrementer(new RunIdIncrementer()).listener(jobListener())
+				.start(dailyCall1()).next(dailyCall2()).next(dailyCall3()).next(dailyCall4()).build();
 	}
 
 	@Bean
-	public Step step1() {
-		return stepBuilderFactory.get("callNrServiceStep")
-				.<NewRelicResponse, String>chunk(1)
-				.reader(reader1())
-				.processor(processor())
-				.writer(writer())
-				.build();
+	public Job callNrMonthly() {
+
+		return jobBuilderFactory.get("monthlyJob").incrementer(new RunIdIncrementer()).listener(jobListener())
+				.start(monthlyCall1()).next(monthlyCall2()).next(monthlyCall3()).next(monthlyCall4()).build();
+
 	}
 
 	@Bean
-	public Step step2() {
-		return stepBuilderFactory.get("callNrServiceStep")
-				.<NewRelicResponse, String>chunk(1)
-				.reader(reader2())
-				.processor(processor())
-				.writer(writer())
-				.build();
-	}	@Bean
-	public Step step3() {
-		return stepBuilderFactory.get("callNrServiceStep")
-				.<NewRelicResponse, String>chunk(1)
-				.reader(reader3())
-				.processor(processor())
-				.writer(writer())
-				.build();
-	}	@Bean
-	public Step step4() {
-		return stepBuilderFactory.get("callNrServiceStep")
-				.<NewRelicResponse, String>chunk(1)
-				.reader(reader4())
-				.processor(processor())
-				.writer(writer())
-				.build();
-	}
-	
-	@Bean
-	@StepScope
-	public NrJobReader reader1() {
-		 return new NrJobReader(PerPortalConstants.NR_METRICS[0],PerPortalConstants.NR_VALUES[0],beId);
-	}
-	@Bean
-	@StepScope
-	public NrJobReader reader2() {
-		 return new NrJobReader(PerPortalConstants.NR_METRICS[0],PerPortalConstants.NR_VALUES[1],beId);
-	}
-	@Bean
-	@StepScope
-	public NrJobReader reader3() {
-		 return new NrJobReader(PerPortalConstants.NR_METRICS[1],PerPortalConstants.NR_VALUES[0],beId);
-	}
-	@Bean
-	@StepScope
-	public NrJobReader reader4() {
-		 return new NrJobReader(PerPortalConstants.NR_METRICS[1],PerPortalConstants.NR_VALUES[1],beId);
-	}
-	@Bean	
-	public NrResponseProcessor processor() {
-		return new NrResponseProcessor();
+	public Step dailyCall1() {
+		return stepBuilderFactory.get("dailyCall1").<NewRelicResponse, NewRelicMongoDailyItem>chunk(1)
+				.reader(dailyReader1()).processor(dailyProcessor()).writer(dailyWriter()).build();
 	}
 
 	@Bean
-	public NrJobWriter writer() {
-		return new NrJobWriter();
+	public Step dailyCall2() {
+		return stepBuilderFactory.get("dailyCall2").<NewRelicResponse, NewRelicMongoDailyItem>chunk(1)
+				.reader(dailyReader2()).processor(dailyProcessor()).writer(dailyWriter()).build();
+	}
+
+	@Bean
+	public Step dailyCall3() {
+		return stepBuilderFactory.get("dailyCall3").<NewRelicResponse, NewRelicMongoDailyItem>chunk(1)
+				.reader(dailyReader3()).processor(dailyProcessor()).writer(dailyWriter()).build();
+	}
+
+	@Bean
+	public Step dailyCall4() {
+		return stepBuilderFactory.get("dailyCall4").<NewRelicResponse, NewRelicMongoDailyItem>chunk(1)
+				.reader(dailyReader4()).processor(dailyProcessor()).writer(dailyWriter()).build();
+	}
+
+	@Bean
+	public Step monthlyCall1() {
+		return stepBuilderFactory.get("monthlyCall1").<NewRelicResponse, NewRelicMongoMonthlyItem>chunk(1)
+				.reader(monthlyReader1()).processor(monthlyProcessor()).writer(monthlyWriter()).build();
+	}
+
+	@Bean
+	public Step monthlyCall2() {
+		return stepBuilderFactory.get("monthlyCall2").<NewRelicResponse, NewRelicMongoMonthlyItem>chunk(1)
+				.reader(monthlyReader2()).processor(monthlyProcessor()).writer(monthlyWriter()).build();
+	}
+
+	@Bean
+	public Step monthlyCall3() {
+		return stepBuilderFactory.get("monthlyCall3").<NewRelicResponse, NewRelicMongoMonthlyItem>chunk(1)
+				.reader(monthlyReader3()).processor(monthlyProcessor()).writer(monthlyWriter()).build();
+	}
+
+	@Bean
+	public Step monthlyCall4() {
+		return stepBuilderFactory.get("monthlyCall4").<NewRelicResponse, NewRelicMongoMonthlyItem>chunk(1)
+				.reader(monthlyReader4()).processor(monthlyProcessor()).writer(monthlyWriter()).build();
+	}
+
+	@Bean
+	@StepScope
+	public NrJobReader dailyReader1() {
+		return new NrJobReader(PerPortalConstants.NR_METRICS[0], PerPortalConstants.NR_VALUES[0], beId, false);
+	}
+
+	@Bean
+	@StepScope
+	public NrJobReader dailyReader2() {
+		return new NrJobReader(PerPortalConstants.NR_METRICS[0], PerPortalConstants.NR_VALUES[1], beId, false);
+	}
+
+	@Bean
+	@StepScope
+	public NrJobReader dailyReader3() {
+		return new NrJobReader(PerPortalConstants.NR_METRICS[1], PerPortalConstants.NR_VALUES[0], beId, false);
+	}
+
+	@Bean
+	@StepScope
+	public NrJobReader dailyReader4() {
+		return new NrJobReader(PerPortalConstants.NR_METRICS[1], PerPortalConstants.NR_VALUES[1], beId, false);
+	}
+
+	@Bean
+	@StepScope
+	public NrJobReader monthlyReader1() {
+		return new NrJobReader(PerPortalConstants.NR_METRICS[0], PerPortalConstants.NR_VALUES[0], beId, true);
+	}
+
+	@Bean
+	@StepScope
+	public NrJobReader monthlyReader2() {
+		return new NrJobReader(PerPortalConstants.NR_METRICS[0], PerPortalConstants.NR_VALUES[1], beId, true);
+	}
+
+	@Bean
+	@StepScope
+	public NrJobReader monthlyReader3() {
+		return new NrJobReader(PerPortalConstants.NR_METRICS[1], PerPortalConstants.NR_VALUES[0], beId, true);
+	}
+
+	@Bean
+	@StepScope
+	public NrJobReader monthlyReader4() {
+		return new NrJobReader(PerPortalConstants.NR_METRICS[1], PerPortalConstants.NR_VALUES[1], beId, true);
+	}
+
+	@Bean
+	public NrDailyProcessor dailyProcessor() {
+		return new NrDailyProcessor();
+	}
+
+	@Bean
+	public NrMonthProcessor monthlyProcessor() {
+		return new NrMonthProcessor();
+	}
+
+	@Bean
+	public NrJobDailyWriter dailyWriter() {
+		return new NrJobDailyWriter();
+	}
+
+	@Bean
+	public NrJobMonthlyWriter monthlyWriter() {
+		return new NrJobMonthlyWriter();
 	}
 
 	@Bean
 	public JobExecutionListener jobListener() {
 		return new NrJobListener();
 	}
-	
-
 
 }
