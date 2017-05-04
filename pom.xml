@@ -3,7 +3,6 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>it.percassi</groupId>
 	<artifactId>PerBatch</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
 
 	<properties>
@@ -166,4 +165,5 @@
 			<version>3.0.7</version>
 		</dependency>
 	</dependencies>
+	<version>1.0.0</version>
 </project>
