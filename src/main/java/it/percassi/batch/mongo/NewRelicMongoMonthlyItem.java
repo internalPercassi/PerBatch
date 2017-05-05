@@ -1,4 +1,4 @@
-package it.percassi.batch.nrelic;
+package it.percassi.batch.mongo;
 
 public class NewRelicMongoMonthlyItem extends NewRelicMongoDailyItem {
 

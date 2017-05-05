@@ -15,6 +15,8 @@ public class PerPortalConstants {
 	public static final int API_CALL_KO = -1;
 	public static final String NEW_RELIC_COLLECTION_DAILY = "newRelicDaily";
 	public static final String NEW_RELIC_COLLECTION_MONTHLY = "newRelicMonthly";
+	public static final String NEW_RELIC_COLLECTION_WEEKLY = "newRelicWeekly";
+
 
 
 	public static final String[] NR_METRICS = { "HttpDispatcher", "EndUser", };

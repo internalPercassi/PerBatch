@@ -1,4 +1,4 @@
-package it.percassi.batch;
+package it.percassi.batch.processors;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.item.ItemProcessor;
 
-import it.percassi.batch.nrelic.NewRelicMongoDailyItem;
+import it.percassi.batch.mongo.NewRelicMongoDailyItem;
 import it.percassi.batch.nrelic.model.NewRelicResponse;
 import it.percassi.batch.nrelic.model.Values;
 import it.percassi.utils.PerPortalConstants;

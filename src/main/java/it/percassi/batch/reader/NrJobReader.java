@@ -1,4 +1,4 @@
-package it.percassi.batch;
+package it.percassi.batch.reader;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -29,6 +29,7 @@ public class NrJobReader implements ItemReader<NewRelicResponse> {
 	private String metricValue;
 	private String serverId;
 	private boolean isMonthlyCall;
+	private boolean isWeeklyCall;
 
 
 	public String getMetricName() {
@@ -58,6 +59,9 @@ public class NrJobReader implements ItemReader<NewRelicResponse> {
 	public boolean isMonthlyCall() {
 		return isMonthlyCall;
 	}
+	public boolean isWeeklyCall() {
+		return isWeeklyCall;
+	}
 
 	private boolean  isCallWsFinished = false;
 	NewRelicResponse nrResponse = null;
@@ -70,11 +74,13 @@ public class NrJobReader implements ItemReader<NewRelicResponse> {
 
 
 
-	public NrJobReader(String metricName, String metricValue, String serverId,boolean isMonthlyCall) {
+	public NrJobReader(String metricName, String metricValue, String serverId,boolean isWeeklyCall,boolean isMonthlyCall) {
 		this.metricName=metricName;
 		this.metricValue=metricValue;
 		this.serverId=serverId;
+		this.isWeeklyCall=isWeeklyCall;
 		this.isMonthlyCall=isMonthlyCall;
+		
 	}
 
 	@Override
@@ -84,6 +90,12 @@ public class NrJobReader implements ItemReader<NewRelicResponse> {
 
 			LocalDateTime fromDate=LocalDateTime.now().minusDays(1).toLocalDate().atStartOfDay();
 			LocalDateTime toDate=LocalDateTime.now().toLocalDate().atStartOfDay().minusSeconds(1);
+			
+			if(isWeeklyCall){
+				
+				fromDate=LocalDateTime.now().minusWeeks(1).toLocalDate().atStartOfDay();
+				toDate=LocalDateTime.now().toLocalDate().atStartOfDay().minusSeconds(1);
+			}
 			
 			if(isMonthlyCall){
 				fromDate=LocalDateTime.now().minusMonths(1).withDayOfMonth(1).toLocalDate().atStartOfDay();

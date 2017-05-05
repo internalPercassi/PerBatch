@@ -1,4 +1,4 @@
-package it.percassi.batch;
+package it.percassi.batch.writers;
 
 import java.util.List;
 
@@ -15,46 +15,51 @@ import com.mongodb.MongoException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
-import it.percassi.batch.nrelic.NewRelicMongoMonthlyItem;
+import it.percassi.batch.mongo.NewRelicMongoDailyItem;
 import it.percassi.utils.PerPortalConstants;
 
-public class NrJobMonthlyWriter implements ItemWriter<NewRelicMongoMonthlyItem> {
+public class NrJobDailyWriter implements ItemWriter<NewRelicMongoDailyItem> {
 
 	@Value("${mongoDB.DBname}")
 	private String mongoDBName;
 	@Value("${mongoDB.URI}")
 	private String mongoDBUri;
 
-	private static final Logger LOG = LoggerFactory.getLogger(NrJobMonthlyWriter.class);
+	private static final Logger LOG = LoggerFactory.getLogger(NrJobDailyWriter.class);
 
 	@Override
-	public void write(List<? extends NewRelicMongoMonthlyItem> item) throws JsonProcessingException, MongoException {
+	public void write(List<? extends NewRelicMongoDailyItem> item) throws JsonProcessingException, MongoException {
+		
 
 		final MongoClientURI mcu = new MongoClientURI(mongoDBUri);
 		final MongoClient mc = new MongoClient(mcu);
 		final MongoDatabase mdb = mc.getDatabase(mongoDBName);
+		Document doc = null;
 
 		try {
 			
-			Document doc = toBSONDoc(item.get(0));
+			doc = toBSONDoc(item.get(0));
 			
-			MongoCollection<Document> collection = mdb.getCollection(PerPortalConstants.NEW_RELIC_COLLECTION_MONTHLY);
+			MongoCollection<Document> collection = mdb.getCollection(PerPortalConstants.NEW_RELIC_COLLECTION_DAILY);
 			LOG.info("Saving data to mongoDB: {}", doc);
 			collection.insertOne(doc);
-		} finally {
+		}
+			catch (Exception e) {
+				LOG.error("An error occured while saving data {} with exception {} ",doc,e);
+			}
+		finally {
 			mc.close();
 		}
 
 
 	}
 
-	private Document toBSONDoc(NewRelicMongoMonthlyItem itemToConvert) {
+	private Document toBSONDoc(NewRelicMongoDailyItem itemToConvert) {
 		Document ret = new Document();
 		ret.append("metricName", itemToConvert.getMetricName());
-		ret.append("day",null);
+		ret.append("day", itemToConvert.getDay());
 		ret.append("value", itemToConvert.getValue());
 		ret.append("valueName", itemToConvert.getValueName());
-		ret.append("yearMonth", itemToConvert.getYearMonth());
 		return ret;
 	}
 
