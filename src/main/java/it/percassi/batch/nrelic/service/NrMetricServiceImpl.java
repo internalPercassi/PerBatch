@@ -61,7 +61,7 @@ public class NrMetricServiceImpl implements NrMetricService {
 		final String newRelicUrl = PerPortalUtils.createNewRelicUrl(nrUrl, request.getMachineId(), endUrl);
 		final HttpEntity<String> newRelicEntity = PerPortalUtils.builHttpEntityNewRelicApi(apiKey);
 		final URI uri = PerPortalUtils.generateUriToCall(newRelicUrl, request.getFromDate(), request.getToDate(),
-				uriParams, request.getSamplePeriod());
+				uriParams, request.getSamplePeriod(),request.isSummarize());
 
 		LOG.info("URI generated : {} ", ReflectionToStringBuilder.toString(uri, ToStringStyle.SHORT_PREFIX_STYLE));
 
