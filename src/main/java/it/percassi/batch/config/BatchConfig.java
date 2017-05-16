@@ -71,8 +71,7 @@ public class BatchConfig {
 	private String beId;
 
 
-//	@Scheduled(cron="${cron.job.expression}")
-	@Scheduled(fixedRate=20000)
+	@Scheduled(cron="${cron.job.expression}")
 	public void launchJob() {
 
 		LocalDate now = LocalDate.now();
