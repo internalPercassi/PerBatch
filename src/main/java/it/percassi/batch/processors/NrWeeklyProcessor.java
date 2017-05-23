@@ -28,7 +28,7 @@ public class NrWeeklyProcessor implements ItemProcessor<NewRelicResponse, NewRel
 		
 
 		TemporalField weekField = WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear(); 
-		int weekNumber = fromDate.toLocalDate().get(weekField);
+		String weekNumber =Integer.toString(fromDate.getYear())+Integer.toString(fromDate.toLocalDate().get(weekField));
 
 		
 		boolean isAverageTimeNull = (values.getAverageResponseTime() == 0);
@@ -40,7 +40,7 @@ public class NrWeeklyProcessor implements ItemProcessor<NewRelicResponse, NewRel
 		newRelicMongoWeeklyItem.setMetricName(item.getMetricData().getMetrics().get(0).getName());
 		newRelicMongoWeeklyItem.setValueName(valueName);
 		newRelicMongoWeeklyItem.setValue(summarizeValue);
-		newRelicMongoWeeklyItem.setWeekNumber(weekNumber);
+		newRelicMongoWeeklyItem.setWeekNumber(Integer.parseInt(weekNumber));
 		LOG.info("item processed: {}",newRelicMongoWeeklyItem.toString());
 		return newRelicMongoWeeklyItem;
 	}
